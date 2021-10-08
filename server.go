@@ -15,7 +15,7 @@ type Server interface {
 // sdkHttpServer 基于http库实现
 type sdkHttpServer struct {
 	Name    string
-	handler *HandlerBaseOnMap //
+	handler Handler //这里强耦合 例如不应该让server知道内部的实现是Map 要引入新的Handler抽象
 }
 
 // Route 路由注册
@@ -24,8 +24,7 @@ func (s *sdkHttpServer) Route(
 	pattern string,
 	handleFunc func(ctx *Context)) { //http.HandlerFunc --> func (ctx *Context)
 
-	key := s.handler.key(method, pattern)
-	s.handler.handlers[key] = handleFunc
+	s.handler.Route(method, pattern, handleFunc)
 	//// 唯一细节相关的就是http.HandleFunc
 	//http.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
 	//	// handleFunc --> func(writer http.ResponseWriter, request *http.Request) {....}
@@ -52,6 +51,7 @@ func NewServer() Server {
 // NewHttpServer 让用户第一次进去不知道我sdkHttpServer的源码
 func NewHttpServer(name string) Server {
 	return &sdkHttpServer{
-		Name: name,
+		Name:    name,
+		handler: NewHandlerBaseOnMap(),
 	}
 }
